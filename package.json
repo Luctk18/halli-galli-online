@@ -1,0 +1,8 @@
+{
+  "name": "halli-galli-online",
+  "version": "1.0.0",
+  "description": "Online multiplayer Halli Galli (zero dependencies)",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" }
+}
