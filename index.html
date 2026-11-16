@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Halli Galli Online</title>
+<style>
+  :root { --bg:#0f172a; --panel:#1e293b; --text:#e2e8f0; --muted:#94a3b8; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:radial-gradient(circle at 50% 0%, #1e3a5f 0%, var(--bg) 60%); color:var(--text);
+         font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; min-height:100vh; user-select:none; touch-action:manipulation; }
+  #app { max-width:1400px; width:100%; margin:0 auto; padding:16px; min-height:100vh; display:flex; flex-direction:column; justify-content:center; }
+  h1 { text-align:center; margin:12px 0 4px; font-size:2rem; }
+  .sub { text-align:center; color:var(--muted); margin-bottom:20px; }
+  .box { background:var(--panel); border-radius:16px; padding:20px; margin:14px auto; max-width:420px; }
+  input { width:100%; padding:12px; border-radius:10px; border:2px solid #334155; background:#0f172a; color:var(--text);
+          font-size:1rem; margin:6px 0; user-select:text; }
+  input.code { text-transform:uppercase; letter-spacing:.3em; text-align:center; font-size:1.4rem; }
+  button { cursor:pointer; border:0; border-radius:12px; padding:12px 18px; font-size:1rem; font-weight:700; color:#fff; background:#3b82f6; }
+  button:hover { filter:brightness(1.1); }
+  button:disabled { opacity:.4; cursor:not-allowed; filter:none; }
+  button.full { width:100%; margin-top:8px; }
+  button.alt { background:#475569; }
+  .err { color:#fca5a5; text-align:center; min-height:1.2em; margin:6px 0 0; }
+  details { color:var(--muted); font-size:.9rem; margin-top:12px; }
+  details li { margin:4px 0; }
+  .room { text-align:center; }
+  .big-code { font-size:3rem; letter-spacing:.2em; font-weight:800; }
+  .plist { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:14px 0; }
+  .chip { padding:8px 14px; border-radius:999px; background:#0f172a; border:2px solid var(--c); }
+  .chip.off { opacity:.4; }
+  .players { display:flex; flex-wrap:wrap; gap:clamp(10px,2vw,24px); justify-content:center; margin:10px 0; }
+  .pl { --cw:clamp(100px,13vw,170px); width:calc(var(--cw) + 34px); background:var(--panel); border-radius:16px; padding:10px; text-align:center; border:3px solid transparent; transition:.15s; }
+  .pl.turn { border-color:var(--c); box-shadow:0 0 18px var(--c); }
+  .pl.out { opacity:.35; }
+  .pl.off .nm::after { content:' 📴'; }
+  .nm { font-weight:700; font-size:1.05rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--c); }
+  .cnt { font-size:.95rem; color:var(--muted); margin-top:6px; }
+  .top { display:flex; justify-content:center; margin:8px 0; min-height:calc(var(--cw) * 1.25); }
+  .card { width:var(--cw); height:calc(var(--cw) * 1.25); background:#fffbeb; border-radius:14px; border:6px solid #999; display:flex; align-items:center; justify-content:center; padding:4px; }
+  .card.banana { border-color:#eab308; } .card.strawberry { border-color:#ef4444; }
+  .card.lime { border-color:#22c55e; } .card.plum { border-color:#8b5cf6; }
+  .card.empty { background:transparent; border:2px dashed #334155; }
+  .pips { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:0 2px; line-height:1.05; }
+  .pips.n1 { font-size:calc(var(--cw) * .52); } .pips.n2 { font-size:calc(var(--cw) * .39); } .pips.n3 { font-size:calc(var(--cw) * .32); }
+  .pips.n4 { font-size:calc(var(--cw) * .32); width:calc(var(--cw) * .73); } .pips.n5 { font-size:calc(var(--cw) * .28); width:calc(var(--cw) * .8); }
+  .pop { animation:pop .25s ease-out; }
+  @keyframes pop { from { transform:translateY(-30px) rotate(-8deg) scale(.8); opacity:0; } to { transform:none; opacity:1; } }
+  .banner { text-align:center; font-size:clamp(1.15rem,2.2vw,1.7rem); font-weight:700; min-height:2.4em; margin:14px 0; padding:12px; border-radius:12px; background:#0b1220; }
+  .banner.fresh.bell-ok { animation:good .8s; } .banner.fresh.bell-bad { animation:bad .5s; }
+  @keyframes good { 0% { background:#16a34a; transform:scale(1.1);} 100% { background:#0b1220; transform:none; } }
+  @keyframes bad { 0% { background:#dc2626; transform:translateX(-8px);} 50% { transform:translateX(8px);} 100% { background:#0b1220; transform:none; } }
+  .controls { display:flex; gap:clamp(16px,4vw,48px); justify-content:center; align-items:center; flex-wrap:wrap; margin:18px 0; }
+  .bell { width:clamp(150px,20vw,230px); height:clamp(150px,20vw,230px); border-radius:50%; font-size:clamp(4rem,8vw,6.5rem); background:radial-gradient(circle at 35% 30%, #fde047, #ca8a04); box-shadow:0 10px 0 #854d0e, 0 16px 28px #0008; }
+  .bell:active:not(:disabled), .bell.rung { transform:translateY(8px); box-shadow:0 2px 0 #854d0e; }
+  .bell.rung span { display:inline-block; animation:swing .6s ease-out; }
+  @keyframes swing { 0% { transform:rotate(0); } 15% { transform:rotate(-25deg); } 35% { transform:rotate(20deg); } 55% { transform:rotate(-12deg); } 75% { transform:rotate(6deg); } 100% { transform:rotate(0); } }
+  .flip { padding:clamp(22px,3vw,36px) clamp(28px,4vw,52px); font-size:clamp(1.2rem,2vw,1.7rem); background:#16a34a; }
+  .status { text-align:center; color:var(--muted); font-size:1.1rem; }
+  .hint { text-align:center; color:var(--muted); font-size:.8rem; margin-top:8px; }
+  .overlay { position:fixed; inset:0; background:#000a; display:flex; align-items:center; justify-content:center; z-index:10; }
+  .overlay .box { text-align:center; }
+  .toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:#7f1d1d; padding:10px 16px; border-radius:10px; z-index:20; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const EMOJI = { banana:'🍌', strawberry:'🍓', lime:'🍏', plum:'🍇' };
+const $app = document.getElementById('app');
+let S = null, es = null, conn = null, lockEnd = 0, lastSeq = -1, lockTimer = null, audio = null;
+
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const load = () => { try { return JSON.parse(localStorage.getItem('hg')); } catch { return null; } };
+const store = (o) => localStorage.setItem('hg', JSON.stringify(o));
+
+async function api(path, body) {
+  try {
+    const r = await fetch('/api/' + path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ ...conn, ...body }) });
+    return await r.json();
+  } catch { return { error:'Network error' }; }
+}
+function toast(t) {
+  const d = document.createElement('div'); d.className = 'toast'; d.textContent = t;
+  document.body.appendChild(d); setTimeout(() => d.remove(), 1500);
+}
+
+// ---------- sound ----------
+function tone(f, dur, type = 'sine', vol = .15, delay = 0) {
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime + delay;
+    o.type = type; o.frequency.value = f; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+    o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t + dur);
+  } catch {}
+}
+// real-bell timbre: inharmonic partials with long decays
+function bellSound() {
+  [[1, .35, 1.8], [2.76, .22, 1.2], [5.4, .12, .7], [8.93, .07, .4]].forEach(([m, v, d]) => tone(880 * m, d, 'sine', v));
+  tone(220, .25, 'triangle', .12); // clapper strike
+}
+const sounds = {
+  flip: () => tone(500, .06, 'triangle', .1),
+  'bell-ok': () => bellSound(),
+  'bell-bad': () => { tone(110, .35, 'sawtooth', .15); },
+  start: () => { tone(660, .15); tone(880, .25, 'sine', .15, .15); },
+  end: () => { [523, 659, 784, 1046].forEach((f, i) => tone(f, .3, 'sine', .15, i * .15)); },
+};
+
+// ---------- home ----------
+function home(msg) {
+  const name = localStorage.getItem('hgname') || '';
+  const roomParam = (new URLSearchParams(location.search).get('room') || '').toUpperCase();
+  $app.innerHTML = `
+    <h1>🔔 Halli Galli</h1><div class="sub">The fast-fingered fruit card game — online</div>
+    <div class="box">
+      <input id="name" maxlength="14" placeholder="Your name" value="${esc(name)}">
+      <button class="full" data-click="create">Create room</button>
+      <div style="text-align:center;margin:12px 0;color:var(--muted)">— or join —</div>
+      <input id="code" class="code" maxlength="4" placeholder="CODE" value="${esc(roomParam)}">
+      <button class="full alt" data-click="join">Join room</button>
+      <div class="err" id="err">${msg ? esc(msg) : ''}</div>
+      <details><summary>How to play</summary><ul>
+        <li>Each player has a face-down deck. On your turn, flip your top card onto your face-up pile.</li>
+        <li>If the <b>visible top cards</b> of all players add up to <b>exactly 5 of one fruit</b>, hit the bell (🔔 / Space) first!</li>
+        <li>Fastest correct ringer takes every face-up card. A wrong ring costs you one card for each other player.</li>
+        <li>Run out of cards completely and you're out. Last player standing wins.</li>
+        <li>Keys: <b>Space</b> = bell, <b>Enter</b> or <b>F</b> = flip.</li></ul></details>
+    </div>`;
+}
+const showErr = (t) => { const e = document.getElementById('err'); if (e) e.textContent = t; };
+
+async function enter(path, extra) {
+  const name = document.getElementById('name').value.trim();
+  if (!name) return showErr('Enter a name first');
+  localStorage.setItem('hgname', name);
+  conn = null;
+  const r = await api(path, { name, ...extra });
+  if (r.error) return showErr(r.error);
+  conn = { code: r.code, token: r.token }; store(conn); connect();
+}
+
+// ---------- realtime ----------
+function connect() {
+  if (es) es.close();
+  es = new EventSource(`/api/events?code=${conn.code}&token=${conn.token}`);
+  es.onmessage = (e) => { S = JSON.parse(e.data); lockEnd = Date.now() + S.lockMs; onState(); };
+  es.onerror = () => {
+    if (es.readyState === EventSource.CLOSED) {
+      localStorage.removeItem('hg'); conn = null; S = null; es = null; home('Disconnected or room closed.');
+    }
+  };
+}
+function onState() {
+  let fresh = false;
+  if (S.event && S.event.seq !== lastSeq) {
+    fresh = true; lastSeq = S.event.seq;
+    // your own bell press already played the ding locally
+    const own = S.event.type === 'bell-ok' && S.event.by === S.you;
+    const s = sounds[S.event.type]; if (s && !own) s();
+  }
+  render(fresh);
+  clearTimeout(lockTimer);
+  if (S.lockMs > 0) lockTimer = setTimeout(() => render(false), S.lockMs + 30);
+}
+
+// ---------- rendering ----------
+function cardHTML(c) {
+  if (!c) return '<div class="card empty"></div>';
+  const e = EMOJI[c.f];
+  return `<div class="card ${c.f}"><div class="pips n${c.n}">${Array(c.n).fill(`<span>${e}</span>`).join('')}</div></div>`;
+}
+
+function render(fresh) {
+  if (!S) return;
+  if (S.status === 'lobby') return renderLobby();
+  const me = S.players.find((p) => p.id === S.you);
+  const playing = S.status === 'playing';
+  const myTurn = playing && S.turn === S.you;
+  const locked = Date.now() < lockEnd;
+  const curName = (S.players.find((p) => p.id === S.turn) || {}).name;
+  const ev = S.event || {};
+
+  $app.innerHTML = `
+    <div class="players">${S.players.map((p) => `
+      <div class="pl ${p.out ? 'out' : ''} ${S.turn === p.id ? 'turn' : ''} ${p.connected ? '' : 'off'}" style="--c:${p.color}">
+        <div class="nm">${esc(p.name)}${p.id === S.you ? ' (you)' : ''}</div>
+        <div class="top ${fresh && ev.type === 'flip' && ev.by === p.id ? 'pop' : ''}">${cardHTML(p.top)}</div>
+        <div class="cnt">🂠 ${p.deckCount} · pile ${p.pileCount}</div>
+      </div>`).join('')}</div>
+    <div class="banner ${esc(ev.type || '')} ${fresh ? 'fresh' : ''}">${esc(ev.text || '')}</div>
+    <div class="status">${!playing ? '' : myTurn ? '👉 Your turn — flip a card!' : `Waiting for ${esc(curName || '…')} to flip…`}</div>
+    <div class="controls">
+      <button class="flip" data-act="flip" ${myTurn && !locked ? '' : 'disabled'}>Flip card</button>
+      <button class="bell" data-act="bell" ${playing && !me.out ? '' : 'disabled'}><span>🔔</span></button>
+    </div>
+    <div class="hint">Space = bell · Enter / F = flip · idle players are auto-flipped after 12s</div>
+    ${S.status === 'finished' ? `
+      <div class="overlay"><div class="box">
+        <h1>🏆</h1><h2>${S.winner ? esc(S.winner.name) + ' wins!' : 'Game over'}</h2>
+        ${S.host === S.you ? '<button class="full" data-click="reset">Play again</button>' : '<div class="status">Waiting for the host…</div>'}
+        <button class="full alt" data-click="exit">Leave</button>
+      </div></div>` : ''}`;
+}
+
+function renderLobby() {
+  const isHost = S.host === S.you;
+  const link = `${location.origin}/?room=${S.code}`;
+  $app.innerHTML = `
+    <h1>🔔 Halli Galli</h1>
+    <div class="box room">
+      <div class="sub">Room code</div><div class="big-code">${S.code}</div>
+      <button class="alt" data-click="copy" style="margin-top:8px">📋 Copy invite link</button>
+      <div class="plist">${S.players.map((p) => `<span class="chip ${p.connected ? '' : 'off'}" style="--c:${p.color}">${esc(p.name)}${p.id === S.host ? ' 👑' : ''}${p.id === S.you ? ' (you)' : ''}</span>`).join('')}</div>
+      <div class="status">${S.players.length}/6 players</div>
+      ${isHost ? `<button class="full" data-click="start" ${S.players.length < 2 ? 'disabled' : ''}>Start game</button>`
+               : '<div class="status" style="margin-top:10px">Waiting for the host to start…</div>'}
+      <button class="full alt" data-click="exit">Leave</button>
+    </div>`;
+  window._link = link;
+}
+
+// ---------- input ----------
+async function doAct(a) {
+  if (!conn || !S) return;
+  if (a === 'bell' && S.status === 'playing') {
+    bellSound(); // instant local ding when you hit the bell
+    const el = document.querySelector('.bell');
+    if (el) { el.classList.remove('rung'); void el.offsetWidth; el.classList.add('rung'); setTimeout(() => el.classList.remove('rung'), 600); }
+  }
+  const r = await api(a);
+  if (r.error && a === 'bell') toast(r.error);
+}
+document.addEventListener('pointerdown', (e) => {
+  const b = e.target.closest('[data-act]');
+  if (b && !b.disabled) { e.preventDefault(); doAct(b.dataset.act); }
+});
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-click]');
+  if (!b) return;
+  const a = b.dataset.click;
+  if (a === 'create') enter('create');
+  else if (a === 'join') {
+    const code = document.getElementById('code').value.trim().toUpperCase();
+    if (code.length !== 4) return showErr('Enter the 4-letter room code');
+    enter('join', { code });
+  }
+  else if (a === 'start') { const r = await api('start'); if (r.error) toast(r.error); }
+  else if (a === 'reset') api('reset');
+  else if (a === 'copy') { try { await navigator.clipboard.writeText(window._link); toast('Link copied'); } catch { prompt('Copy this link:', window._link); } }
+  else if (a === 'exit') {
+    if (conn) api('leave');
+    if (es) es.close();
+    es = null; conn = null; S = null; localStorage.removeItem('hg'); history.replaceState(null, '', '/'); home();
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if (!S || S.status !== 'playing' || e.repeat || /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
+  if (e.code === 'Space') { e.preventDefault(); doAct('bell'); }
+  else if (e.code === 'Enter' || e.code === 'KeyF') { e.preventDefault(); doAct('flip'); }
+});
+
+// ---------- boot ----------
+conn = load();
+if (conn) connect(); else home();
+</script>
+</body>
+</html>
